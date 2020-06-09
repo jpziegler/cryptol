@@ -107,7 +107,7 @@ lookupProver s =
 --     return True
 
 proverError :: String -> M.ModuleCmd (Maybe String, ProverResult)
-proverError msg (_,modEnv) =
+proverError msg (_, _, modEnv) =
   return (Right ((Nothing, ProverError msg), modEnv), [])
 
 
@@ -120,9 +120,9 @@ allDeclGroups = concatMap mDecls . M.loadedNonParamModules
 
 satProve :: ProverCommand -> M.ModuleCmd (Maybe String, ProverResult)
 satProve ProverCommand {..} =
-  protectStack proverError $ \(evo, modEnv) ->
+  protectStack proverError $ \(evo, byteReader, modEnv) ->
 
-  M.runModuleM (evo,modEnv) $ do
+  M.runModuleM (evo, byteReader, modEnv) $ do
     let extDgs = allDeclGroups modEnv ++ pcExtraDecls
     let lPutStrLn = M.withLogger logPutStrLn
     primMap <- M.getPrimMap
@@ -166,9 +166,9 @@ satProve ProverCommand {..} =
 
 satProveOffline :: ProverCommand -> ((Handle -> IO ()) -> IO ()) -> M.ModuleCmd (Maybe String)
 satProveOffline ProverCommand {..} outputContinuation =
-  protectStack (\msg (_,modEnv) -> return (Right (Just msg, modEnv), [])) $
-  \(evo,modEnv) -> do
-  M.runModuleM (evo,modEnv) $ do
+  protectStack (\msg (_, _, modEnv) -> return (Right (Just msg, modEnv), [])) $
+  \(evo, byteReader, modEnv) -> do
+  M.runModuleM (evo, byteReader, modEnv) $ do
     let extDgs = allDeclGroups modEnv ++ pcExtraDecls
     let lPutStrLn = M.withLogger logPutStrLn
 

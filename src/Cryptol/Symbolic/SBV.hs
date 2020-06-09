@@ -117,7 +117,7 @@ thmSMTResults :: SBV.ThmResult -> [SBV.SMTResult]
 thmSMTResults (SBV.ThmResult r) = [r]
 
 proverError :: String -> M.ModuleCmd (Maybe String, ProverResult)
-proverError msg (_,modEnv) =
+proverError msg (_, _, modEnv) =
   return (Right ((Nothing, ProverError msg), modEnv), [])
 
 
@@ -309,9 +309,9 @@ processResults evo ProverCommand{..} ts results =
 --   of executing the query.
 satProve :: ProverCommand -> M.ModuleCmd (Maybe String, ProverResult)
 satProve pc@ProverCommand {..} =
-  protectStack proverError $ \(evo,modEnv) ->
+  protectStack proverError $ \(evo, byteReader, modEnv) ->
 
-  M.runModuleM (evo,modEnv) $ do
+  M.runModuleM (evo, byteReader, modEnv) $ do
 
   M.io (prepareQuery evo modEnv pc) >>= \case
     Left msg -> return (Nothing, ProverError msg)
@@ -328,8 +328,8 @@ satProve pc@ProverCommand {..} =
 --   the SMT input file corresponding to the given prover command.
 satProveOffline :: ProverCommand -> M.ModuleCmd (Either String String)
 satProveOffline pc@ProverCommand {..} =
-  protectStack (\msg (_,modEnv) -> return (Right (Left msg, modEnv), [])) $
-  \(evOpts,modEnv) -> do
+  protectStack (\msg (_, _, modEnv) -> return (Right (Left msg, modEnv), [])) $
+  \(evOpts, _, modEnv) -> do
     let isSat = case pcQueryType of
           ProveQuery -> False
           SatQuery _ -> True
